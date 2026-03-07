@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>GW_B1_U6_vocab_peronal_qualities</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #FFDEE9;
+            background-image: linear-gradient(0deg, #FFDEE9 0%, #B5FFFC 100%);
+            min-height: 100vh; display: flex; justify-content: center; padding: 20px; margin: 0;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.95); padding: 40px; border-radius: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1); max-width: 850px; width: 100%;
+        }
+        h1 { color: #ff6b6b; text-align: center; }
+        .word-bank {
+            background: #fff; padding: 15px; border-radius: 15px; border: 2px dashed #ff6b6b;
+            text-align: center; margin-bottom: 30px; font-weight: bold; color: #444;
+        }
+        .name-section { text-align: center; margin-bottom: 30px; }
+        #studentName { padding: 12px; font-size: 18px; border: 2px solid #4ecdc4; border-radius: 15px; width: 280px; outline: none; }
+        .sentence { font-size: 18px; line-height: 1.8; margin-bottom: 25px; color: #2f3640; }
+        .gap {
+            border: none; border-bottom: 3px solid #4ecdc4; background: transparent;
+            width: 140px; text-align: center; font-size: 18px; font-weight: bold; outline: none;
+        }
+        .correct { background-color: #c4fce0 !important; border-bottom-color: #27ae60 !important; color: #27ae60; }
+        .wrong { background-color: #ffdada !important; border-bottom-color: #eb4d4b !important; color: #eb4d4b; }
+        button {
+            display: block; width: 100%; background: #ff6b6b; color: white; border: none;
+            padding: 18px; border-radius: 15px; font-size: 22px; font-weight: bold; cursor: pointer; margin-top: 30px;
+        }
+        #chartBox { max-width: 280px; margin: 40px auto; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Personal Qualities</h1>
+    <div class="name-section"><input type="text" id="studentName" placeholder="Введи имя..."></div>
+    <div class="word-bank">ambitious • calm • caring • clever/bright • confident • creative • fit • hard-working • patient • reliable • sensitive • sociable • strong</div>
+
+    <div id="quiz">
+        <div class="sentence">1 I'm a very <b>well-organised</b> person. I always plan very carefully and I know exactly what I'm doing.</div>
+
+        <div class="sentence" data-group="2">
+            2 You need to be <input type="text" class="gap" data-ans="caring,patient"> and <input type="text" class="gap" data-ans="caring,patient"> if you work with children because children need to know that you like them and will help them. You also need to be <input type="text" class="gap" data-ans="calm,sensitive"> and <input type="text" class="gap" data-ans="calm,sensitive"> because it's bad for the children if you get angry with them.
+        </div>
+
+        <div class="sentence" data-group="3">
+            3 Police officers are usually <input type="text" class="gap" data-ans="fit,strong"> and <input type="text" class="gap" data-ans="fit,strong"> because in some situations they need to run fast and use force.
+        </div>
+
+        <div class="sentence">
+            4 Top scientists are usually very <input type="text" class="gap" data-ans="clever/bright">. They can find the answer to very complicated problems. They are also <input type="text" class="gap" data-ans="creative">. They need lots of imagination to think of new ideas.
+        </div>
+
+        <div class="sentence">
+            5 Philip works in a bank. He's very <input type="text" class="gap" data-ans="reliable"> – you know that he'll do his work well. He's <input type="text" class="gap" data-ans="hard-working"> too. He's often the first to start work and the last to leave.
+        </div>
+
+        <div class="sentence">6 Susan is very good at working in a team. She's very <input type="text" class="gap" data-ans="sociable">, she loves being with other people.</div>
+
+        <div class="sentence">7 Firefighters need to be <input type="text" class="gap" data-ans="confident"> in difficult or dangerous situations in order to help people.</div>
+
+        <div class="sentence">8 Charles is really <input type="text" class="gap" data-ans="ambitious">. He won't be happy until he's the company director!</div>
+    </div>
+
+    <button onclick="check()">Проверить и отправить</button>
+    <div id="chartBox"><canvas id="resChart"></canvas></div>
+</div>
+
+<script>
+async function check() {
+    const name = document.getElementById('studentName').value.trim();
+    if (!name) return alert("Введи имя!");
+
+    const inputs = document.querySelectorAll('.gap');
+    let correct = 0;
+    let log = [];
+
+    // Логика проверки с учетом перестановок
+    inputs.forEach((input, index) => {
+        const val = input.value.toLowerCase().trim();
+        const allowed = input.getAttribute('data-ans').toLowerCase().split(',');
+        
+        // Для групп проверяем, не дублируется ли слово в соседнем поле той же группы
+        const parent = input.parentElement;
+        const groupInputs = Array.from(parent.querySelectorAll('.gap'));
+        const otherVals = groupInputs.filter(i => i !== input).map(i => i.value.toLowerCase().trim());
+
+        if (allowed.includes(val) && !otherVals.includes(val)) {
+            input.classList.add('correct'); input.classList.remove('wrong');
+            correct++;
+            log.push(`[${index+1}] ${val} (OK)`);
+        } else if (allowed.includes(val) && otherVals.includes(val) && allowed.length > 1) {
+            // Если ввел одно и то же слово в оба поля группы
+            input.classList.add('wrong'); log.push(`[${index+1}] ${val} (DUP)`);
+        } else {
+            input.classList.add('wrong'); input.classList.remove('correct');
+            log.push(`[${index+1}] ${val || 'EMPTY'} (ERR)`);
+        }
+    });
+
+    const ratio = `${correct}/${inputs.length}`;
+    document.getElementById('chartBox').style.display = 'block';
+    new Chart(document.getElementById('resChart'), {
+        type: 'doughnut',
+        data: { labels: ['Верно', 'Ошибки'], datasets: [{ data: [correct, inputs.length - correct], backgroundColor: ['#27ae60', '#eb4d4b'] }] }
+    });
+
+    // Твоя ссылка
+    const scriptURL = "https://script.google.com/macros/s/AKfycbzWP_YKcWWrQbcrMtftSBAdhXYGF3TT-_Sjn8b3NcNWviG1Qt1o6hz4iL5w0nLWaCbdPw/exec";
+    
+    await fetch(scriptURL, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify({ name: name, taskName: "GW_B1_U6_vocab_peronal_qualities", ratio: ratio, allAnswers: log.join("; ") })
+    });
+    alert("Результаты (" + ratio + ") отправлены!");
+}
+</script>
+</body>
+</html>
